@@ -1,0 +1,6 @@
+{$ORACLE_HOSTNAME} {
+  encode zstd gzip
+
+  # Reverse-proxy the oracle (FastAPI)
+  reverse_proxy oracle:8000
+}

@@ -1,0 +1,66 @@
+services:
+  oracle:
+    build: .
+    restart: unless-stopped
+    environment:
+      # Core billing
+      ORACLE_MACAROON_SECRET: ${ORACLE_MACAROON_SECRET}
+      ORACLE_TOKEN_TTL_SECONDS: ${ORACLE_TOKEN_TTL_SECONDS:-600}
+      ORACLE_API_KEY_PREFIX: ${ORACLE_API_KEY_PREFIX:-bmd_}
+
+      # Wallet (for topups)
+      ORACLE_WALLET_MODE: ${ORACLE_WALLET_MODE:-lnaddr}
+      ORACLE_LIGHTNING_ADDRESS: ${ORACLE_LIGHTNING_ADDRESS}
+
+      # DB
+      ORACLE_DB_PATH: /data/btc_market_data_oracle.sqlite3
+
+      # Rate limiting
+      ORACLE_RL_ENABLED: ${ORACLE_RL_ENABLED:-1}
+      ORACLE_RL_WINDOW_SECONDS: ${ORACLE_RL_WINDOW_SECONDS:-60}
+      ORACLE_RL_MAX_ANON: ${ORACLE_RL_MAX_ANON:-60}
+      ORACLE_RL_MAX_AUTH: ${ORACLE_RL_MAX_AUTH:-2000}
+
+      # Market sources
+      ORACLE_MARKET_MODE: ${ORACLE_MARKET_MODE:-live}
+      ORACLE_BINANCE_BASE_URL: ${ORACLE_BINANCE_BASE_URL:-https://api.binance.com}
+      ORACLE_BINANCE_SYMBOL: ${ORACLE_BINANCE_SYMBOL:-BTCUSDT}
+      ORACLE_BINANCE_DEPTH_LIMIT: ${ORACLE_BINANCE_DEPTH_LIMIT:-50}
+      ORACLE_DERIBIT_BASE_URL: ${ORACLE_DERIBIT_BASE_URL:-https://www.deribit.com}
+      ORACLE_DERIBIT_INSTRUMENT: ${ORACLE_DERIBIT_INSTRUMENT:-BTC-PERPETUAL}
+      ORACLE_BINANCE_TICKER_INTERVAL_SECONDS: ${ORACLE_BINANCE_TICKER_INTERVAL_SECONDS:-1}
+      ORACLE_BINANCE_DEPTH_INTERVAL_SECONDS: ${ORACLE_BINANCE_DEPTH_INTERVAL_SECONDS:-1}
+      ORACLE_DERIBIT_TICKER_INTERVAL_SECONDS: ${ORACLE_DERIBIT_TICKER_INTERVAL_SECONDS:-2}
+
+      # Disable dev endpoints in production
+      ORACLE_DEV_MODE: ${ORACLE_DEV_MODE:-0}
+
+    volumes:
+      - oracle_data:/data
+    networks:
+      - internal
+
+  caddy:
+    image: caddy:2
+    restart: unless-stopped
+    depends_on:
+      - oracle
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      ORACLE_HOSTNAME: ${ORACLE_HOSTNAME}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data
+      - caddy_config:/config
+    networks:
+      - internal
+
+volumes:
+  oracle_data:
+  caddy_data:
+  caddy_config:
+
+networks:
+  internal:
