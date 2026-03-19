@@ -1,0 +1,99 @@
+name: "Beta Operator (Hosted)"
+description: "Onboarding for the hosted beta (prepaid verifications)"
+title: "Beta Operator — <your agent / use case>"
+labels: ["beta-operator"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for trying **BTC Market Data Oracle**.
+
+        Please **don't paste secrets** here (NWC strings, API keys, private keys).
+
+        Links:
+        - Repo: https://github.com/Mike-io-hash/btc-market-data-oracle
+
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Use case
+      description: What are you building and why do you need BTC market data?
+      placeholder: |
+        Example: autonomous trading agent that needs price + funding + liquidity snapshots
+    validations:
+      required: true
+
+  - type: dropdown
+    id: endpoints
+    attributes:
+      label: Which endpoints will you use first?
+      multiple: true
+      options:
+        - /v1/price/btcusd
+        - /v1/volume/btcusd_24h
+        - /v1/liquidity/btcusd
+        - /v1/perps/funding
+        - /v1/snapshot/btc
+    validations:
+      required: true
+
+  - type: textarea
+    id: stack
+    attributes:
+      label: Stack
+      description: Language/framework + where your agent runs (VPS, serverless, local, etc.)
+      placeholder: |
+        Example: Python + LangGraph on a VPS
+    validations:
+      required: true
+
+  - type: textarea
+    id: volume
+    attributes:
+      label: Expected volume (rough)
+      description: Requests/day and your target refresh rate.
+      placeholder: |
+        Example: 100k requests/day; price every 2s; snapshot every 10s
+    validations:
+      required: false
+
+  - type: dropdown
+    id: wallet
+    attributes:
+      label: How will your agent pay top-ups?
+      description: NWC makes top-ups fully automated.
+      options:
+        - "NWC-capable wallet (recommended)"
+        - "Manual payment (no NWC)"
+        - "Not sure yet"
+    validations:
+      required: true
+
+  - type: dropdown
+    id: timeline
+    attributes:
+      label: When do you want to test?
+      options:
+        - "Today"
+        - "This week"
+        - "Next 2 weeks"
+    validations:
+      required: true
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: "I understand hosted pricing is prepaid verifications (minimum top-up 1000 sats -> 200 verifications, no expiry)."
+          required: true
+        - label: "I will not paste secrets (NWC strings, API keys, private keys) in this issue."
+          required: true
+
+  - type: textarea
+    id: notes
+    attributes:
+      label: Anything else?
+      description: Edge cases, desired features, or what would make this a win.
+    validations:
+      required: false

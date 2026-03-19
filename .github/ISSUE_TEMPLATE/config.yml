@@ -1,0 +1,8 @@
+blank_issues_enabled: false
+contact_links:
+  - name: API docs (OpenAPI)
+    url: https://github.com/Mike-io-hash/btc-market-data-oracle#api-docs
+    about: "Endpoints and OpenAPI docs."
+  - name: Security
+    url: https://github.com/Mike-io-hash/btc-market-data-oracle/blob/main/SECURITY.md
+    about: "Please report security issues responsibly."
