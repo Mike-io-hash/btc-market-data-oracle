@@ -22,70 +22,70 @@ from app.main import WALLET, app  # noqa: E402
 
 
 def test_health_and_plans():
-    c = TestClient(app)
+    # Use context manager to ensure FastAPI startup/shutdown events run in all versions.
+    with TestClient(app) as c:
+        r = c.get("/health")
+        assert r.status_code == 200
+        j = r.json()
+        assert j["ok"] is True
+        assert j["service"] == "btc-market-data-oracle"
 
-    r = c.get("/health")
-    assert r.status_code == 200
-    j = r.json()
-    assert j["ok"] is True
-    assert j["service"] == "btc-market-data-oracle"
-
-    r = c.get("/v1/plans")
-    assert r.status_code == 200
-    j = r.json()
-    assert j["ok"] is True
-    assert isinstance(j["plans"], list)
+        r = c.get("/v1/plans")
+        assert r.status_code == 200
+        j = r.json()
+        assert j["ok"] is True
+        assert isinstance(j["plans"], list)
 
 
 def test_mock_topup_and_query_spends_verifications():
-    c = TestClient(app)
+    # Use context manager to ensure startup creates DB tables.
+    with TestClient(app) as c:
+        # Request topup challenge
+        r = c.get("/v1/topup/trial")
+        assert r.status_code == 402
+        j = r.json()
+        assert j["error"] == "payment_required"
+        payment_hash = j["payment_hash"]
+        macaroon = j["macaroon"]
 
-    # Request topup challenge
-    r = c.get("/v1/topup/trial")
-    assert r.status_code == 402
-    j = r.json()
-    assert j["error"] == "payment_required"
-    payment_hash = j["payment_hash"]
-    macaroon = j["macaroon"]
+        # Simulate payment (mock wallet)
+        preimage = WALLET.dev_get_preimage(payment_hash)
+        assert preimage is not None
 
-    # Simulate payment (mock wallet)
-    preimage = WALLET.dev_get_preimage(payment_hash)
-    assert preimage is not None
+        # Finalize topup
+        r2 = c.get(
+            "/v1/topup/trial",
+            headers={"Authorization": f"L402 {macaroon}:{preimage}"},
+        )
+        assert r2.status_code == 200
+        j2 = r2.json()
+        assert j2["ok"] is True
+        assert j2["verifications_added"] == 200
+        api_key = j2["api_key"]
 
-    # Finalize topup
-    r2 = c.get(
-        "/v1/topup/trial",
-        headers={"Authorization": f"L402 {macaroon}:{preimage}"},
-    )
-    assert r2.status_code == 200
-    j2 = r2.json()
-    assert j2["ok"] is True
-    assert j2["verifications_added"] == 200
-    api_key = j2["api_key"]
+        # Call an endpoint (should spend 1)
+        r3 = c.get("/v1/price/btcusd", headers={"X-Api-Key": api_key, "X-Request-Id": "req-1"})
+        assert r3.status_code == 200
+        j3 = r3.json()
+        assert j3["ok"] is True
+        assert j3["verifications_spent"] in (0, 1)
 
-    # Call an endpoint (should spend 1)
-    r3 = c.get("/v1/price/btcusd", headers={"X-Api-Key": api_key, "X-Request-Id": "req-1"})
-    assert r3.status_code == 200
-    j3 = r3.json()
-    assert j3["ok"] is True
-    assert j3["verifications_spent"] in (0, 1)
+        # Same request id should not double-charge
+        r4 = c.get("/v1/price/btcusd", headers={"X-Api-Key": api_key, "X-Request-Id": "req-1"})
+        assert r4.status_code == 200
+        j4 = r4.json()
+        assert j4["ok"] is True
+        assert j4["verifications_spent"] == 0
 
-    # Same request id should not double-charge
-    r4 = c.get("/v1/price/btcusd", headers={"X-Api-Key": api_key, "X-Request-Id": "req-1"})
-    assert r4.status_code == 200
-    j4 = r4.json()
-    assert j4["ok"] is True
-    assert j4["verifications_spent"] == 0
+        # Agent-native endpoints
+        r_usage = c.get("/v1/usage/by-endpoint?since_hours=24", headers={"X-Api-Key": api_key})
+        assert r_usage.status_code == 200
+        j_usage = r_usage.json()
+        assert j_usage["ok"] is True
+        assert isinstance(j_usage.get("endpoints"), list)
 
-    # Agent-native endpoints
-    r_usage = c.get("/v1/usage/by-endpoint?since_hours=24", headers={"X-Api-Key": api_key})
-    assert r_usage.status_code == 200
-    j_usage = r_usage.json()
-    assert j_usage["ok"] is True
-    assert isinstance(j_usage.get("endpoints"), list)
-
-    r_rec = c.get("/v1/recommendation/topup?target_days=3", headers={"X-Api-Key": api_key})
-    assert r_rec.status_code == 200
-    j_rec = r_rec.json()
-    assert j_rec["ok"] is True
-    assert "forecast" in j_rec
+        r_rec = c.get("/v1/recommendation/topup?target_days=3", headers={"X-Api-Key": api_key})
+        assert r_rec.status_code == 200
+        j_rec = r_rec.json()
+        assert j_rec["ok"] is True
+        assert "forecast" in j_rec
