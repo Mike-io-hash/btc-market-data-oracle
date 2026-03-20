@@ -145,6 +145,12 @@ def health() -> dict:
     }
 
 
+
+
+@app.head("/health")
+def health_head():
+    # UptimeRobot and some monitors use HEAD requests.
+    return JSONResponse(status_code=200, content={"ok": True})
 @app.get("/v1/plans")
 def v1_plans(request: Request) -> Any:
     rl = _rate_limit(request, is_auth=False)
