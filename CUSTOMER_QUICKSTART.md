@@ -19,6 +19,11 @@ cp .env.example .env
 npm run demo
 ```
 
+### Python demo client (query + reasoning)
+
+If your agent is in Python, `clients/python` provides a simple query + reasoning demo.
+(It assumes you already have an API key, e.g. from the Node NWC demo.)
+
 ## 1) Top up and get an API key
 
 Pick a plan:

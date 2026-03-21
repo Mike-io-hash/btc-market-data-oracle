@@ -79,6 +79,20 @@ cp .env.example .env
 npm run demo
 ```
 
+### Python demo client (query + reasoning)
+
+If your agent is in Python, use `clients/python` after you have an API key:
+
+```bash
+cd clients/python
+python3 -m venv .venv
+source .venv/bin/activate
+pip install -r requirements.txt
+cp .env.example .env
+# set ORACLE_API_KEY
+python oracle_demo.py
+```
+
 ## Running in production
 
 Use Docker Compose + Caddy (TLS):
