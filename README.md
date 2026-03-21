@@ -67,6 +67,18 @@ Top-ups use an L402-style flow:
    - dev-only (mock wallet): `GET /dev/mock/pay/{payment_hash}` returns the preimage
 3) retry with: `Authorization: L402 <macaroon>:<preimage>` → you receive an `api_key`
 
+### Fastest path (NWC): Node demo client
+
+If you have an NWC-capable wallet, you can run a working top-up + snapshot demo:
+
+```bash
+cd clients/node
+npm install
+cp .env.example .env
+# set NWC_URL
+npm run demo
+```
+
 ## Running in production
 
 Use Docker Compose + Caddy (TLS):

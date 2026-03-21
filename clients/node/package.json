@@ -1,0 +1,15 @@
+{
+  "name": "btc-market-data-oracle-client",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "demo": "node oracle_demo_nwc.mjs",
+    "topup": "node oracle_demo_nwc.mjs --topup",
+    "snapshot": "node oracle_demo_nwc.mjs --snapshot"
+  },
+  "dependencies": {
+    "dotenv": "^17.3.1",
+    "nostr-tools": "^2.15.0",
+    "ws": "^8.18.3"
+  }
+}

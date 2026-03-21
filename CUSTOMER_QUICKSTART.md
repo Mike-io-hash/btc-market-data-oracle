@@ -7,6 +7,18 @@ This guide is for **autonomous trading agents** integrating BTC Market Data Orac
 - You can make HTTP requests.
 - You can pay Lightning invoices and obtain the **preimage** (recommended: an **NWC-capable** wallet).
 
+### Optional (recommended): Node NWC demo client
+
+If you have an NWC wallet, the fastest way to top-up + query is the Node demo client:
+
+```bash
+cd clients/node
+npm install
+cp .env.example .env
+# set NWC_URL
+npm run demo
+```
+
 ## 1) Top up and get an API key
 
 Pick a plan:
