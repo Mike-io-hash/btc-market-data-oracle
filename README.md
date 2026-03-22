@@ -2,11 +2,34 @@
 
 **Prepaid market snapshots for autonomous trading agents (spot, perps, arbitrage).**
 
-BTC Market Data Oracle is a hosted + self-hostable FastAPI service that sells low-latency BTC market data via **prepaid payment verifications** (a predictable budget agents can reason about).
+This is a hosted + open-source FastAPI service that sells low-latency BTC market data via **prepaid payment verifications** (a predictable budget agents can reason about).
 
-## What you get (v1)
+- Hosted API: **https://oracle.satsgate.org**
+- OpenAPI docs: **https://oracle.satsgate.org/docs**
 
-5 endpoints (all prepaid):
+## Hosted-first quickstart (recommended)
+
+If you have an **NWC-capable wallet** (CoinOS, Alby Hub, etc.), the fastest path is the **Oracle Autopilot**.
+
+It will:
+- provision an API key automatically (first run)
+- query `/v1/snapshot/btc` on an interval
+- call the reasoning endpoints periodically
+- optionally auto-top-up with guardrails
+
+```bash
+cd clients/node
+npm install
+cp .env.example .env
+# set NWC_URL
+npm run plug
+```
+
+This is the “plug & play” path for agent operators.
+
+## 5 endpoints (v1) + costs
+
+All endpoints require `X-Api-Key` and spend **verifications** (stored as `credits` internally).
 
 - `GET /v1/price/btcusd` → spot price (Binance BTCUSDT) (**cost: 1 verification**)
 - `GET /v1/volume/btcusd_24h` → 24h volume (Binance) (**cost: 1**)
@@ -17,20 +40,12 @@ BTC Market Data Oracle is a hosted + self-hostable FastAPI service that sells lo
 Every response includes:
 - `staleness_ms` (freshness)
 - `sources` (where data came from)
-- `verification_balance` + `verifications_spent` (so an agent can budget)
-
-## Pricing model (prepaid verifications)
-
-Hosted pricing is prepaid **payment verifications** (stored as `credits` internally). They **do not expire**.
-
-- Minimum top-up: **1000 sats → 200 verifications** (anti-abuse)
-- Each successful API call consumes verifications:
-  - most endpoints: **1**
-  - `/v1/snapshot/btc`: **2**
+- `quote: "USDT"` (we treat BTC/USD as BTC/USDT in v1)
+- `verifications_spent` + `verification_balance`
 
 Tip: send `X-Request-Id` for idempotent spending (safe retries).
 
-## Agent-native operator endpoints
+## Agent-native reasoning endpoints
 
 These endpoints help an agent/operator reason about budget and spend:
 
@@ -38,65 +53,55 @@ These endpoints help an agent/operator reason about budget and spend:
 - `GET /v1/recommendation/topup` → which plan should I buy to cover the next N days?
 - `GET /v1/usage/by-endpoint` → where am I spending verifications?
 
-## API docs
+## Pricing model (prepaid verifications)
 
-- OpenAPI UI: `GET /docs`
-- OpenAPI JSON: `GET /openapi.json`
+Hosted pricing is prepaid **payment verifications** (stored as `credits` internally). They **do not expire**.
 
-## Quickstart (local)
+- Minimum top-up: **1000 sats → 200 verifications** (anti-abuse)
+- Most endpoints cost **1 verification**
+- `/v1/snapshot/btc` costs **2 verifications**
 
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt -r requirements-dev.txt
+## Plug snippets (after you have an API key)
 
-cp .env.example .env
-# for local dev:
-# ORACLE_WALLET_MODE=mock
-# ORACLE_MARKET_MODE=mock
+Python:
 
-uvicorn app.main:app --reload --port 8000
+```py
+import os, uuid, requests
+
+BASE = "https://oracle.satsgate.org"
+API_KEY = os.environ["ORACLE_API_KEY"]
+
+r = requests.get(
+    f"{BASE}/v1/snapshot/btc",
+    headers={"X-Api-Key": API_KEY, "X-Request-Id": str(uuid.uuid4())},
+    timeout=10,
+)
+print(r.json()["snapshot"]["price"]["price"], r.json()["quote"])
 ```
 
-## Getting an API key (top-up)
+Node:
 
-Top-ups use an L402-style flow:
+```js
+const BASE = "https://oracle.satsgate.org";
+const apiKey = process.env.ORACLE_API_KEY;
 
-1) `GET /v1/topup/trial` → returns **402** with `invoice + macaroon`
-2) payer pays the invoice and obtains the **preimage** (NWC wallets can do this programmatically)
-   - dev-only (mock wallet): `GET /dev/mock/pay/{payment_hash}` returns the preimage
-3) retry with: `Authorization: L402 <macaroon>:<preimage>` → you receive an `api_key`
-
-### Fastest path (NWC): Oracle Autopilot (Plug & Play)
-
-If you have an NWC-capable wallet, you can run the Oracle Autopilot reference client.
-It provisions an API key automatically and can keep your balance topped up with guardrails.
-
-```bash
-cd clients/node
-npm install
-cp .env.example .env
-# set NWC_URL
-npm run plug
+const r = await fetch(`${BASE}/v1/snapshot/btc`, {
+  headers: { "X-Api-Key": apiKey, "X-Request-Id": crypto.randomUUID() },
+});
+const data = await r.json();
+console.log(data.snapshot.price.price, data.quote);
 ```
 
-### Python demo client (query + reasoning)
+## Billing implementation
 
-If your agent is in Python, use `clients/python` after you have an API key:
+Billing (prepaid verifications, ledger, top-ups) is **powered by satsgate (open-source)**.
 
-```bash
-cd clients/python
-python3 -m venv .venv
-source .venv/bin/activate
-pip install -r requirements.txt
-cp .env.example .env
-# set ORACLE_API_KEY
-python oracle_demo.py
-```
+## Advanced: Self-host (optional)
 
-## Running in production
+Self-hosting is mainly for **auditing**, custom infra, or special requirements.
+Most operators should use the hosted API.
 
-Use Docker Compose + Caddy (TLS):
+If you do want to self-host, Docker Compose + Caddy is included:
 
 ```bash
 cp .env.example .env
@@ -104,15 +109,6 @@ cp .env.example .env
 
 docker compose up -d --build
 ```
-
-## Data sources (v1)
-
-- Binance Global spot (BTCUSDT) for price + 24h volume + depth
-- Deribit (BTC-PERPETUAL) for funding + open interest
-
-## Billing implementation
-
-Billing (prepaid verifications, ledger, top-ups) is **powered by satsgate (open-source)**.
 
 ---
 

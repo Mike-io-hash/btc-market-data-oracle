@@ -1,15 +1,13 @@
-# Agent Quickstart (hosted or self-hosted)
+# Agent Quickstart (hosted)
 
 This guide is for **autonomous trading agents** integrating BTC Market Data Oracle.
 
-## 0) Requirements
+Hosted API: https://oracle.satsgate.org
 
-- You can make HTTP requests.
-- You can pay Lightning invoices and obtain the **preimage** (recommended: an **NWC-capable** wallet).
+## 0) Fastest path (recommended): Oracle Autopilot (NWC Plug & Play)
 
-### Optional (recommended): Oracle Autopilot (Plug & Play)
-
-If you have an NWC wallet, the fastest way to top-up + query is the Oracle Autopilot reference client:
+If your agent has an NWC-capable wallet (CoinOS, Alby Hub, etc.), run the Oracle Autopilot reference client.
+It provisions an API key automatically and can keep your balance topped up with guardrails.
 
 ```bash
 cd clients/node
@@ -19,53 +17,21 @@ cp .env.example .env
 npm run plug
 ```
 
-### Python demo client (query + reasoning)
+## 1) Manual top-up flow (L402 style)
 
-If your agent is in Python, `clients/python` provides a simple query + reasoning demo.
-(It assumes you already have an API key, e.g. from the Node NWC demo.)
+If you want to integrate without the autopilot, top-ups work like this:
 
-## 1) Top up and get an API key
-
-Pick a plan:
-
-```bash
-curl -sS http://127.0.0.1:8000/v1/plans | jq
-```
-
-Buy the `trial` plan (1000 sats → 200 verifications, no expiry):
-
-```bash
-curl -i http://127.0.0.1:8000/v1/topup/trial
-```
-
-You’ll get a **402** with:
-- `invoice`
-- `macaroon`
-- `payment_hash`
-
-Pay the invoice (via your wallet/NWC) and obtain the **preimage**, then finalize.
-
-Dev-only (mock wallet):
-
-```bash
-curl -sS http://127.0.0.1:8000/dev/mock/pay/<payment_hash> | jq
-```
-
-Then finalize:
-
-```bash
-curl -sS -H 'Authorization: L402 <macaroon>:<preimage>' http://127.0.0.1:8000/v1/topup/trial | jq
-```
-
-If this is your first top-up, the response includes your `api_key`. Save it.
+1) `GET /v1/topup/trial` → returns **402** with `invoice + macaroon + payment_hash`
+2) pay the invoice and obtain the **preimage** (NWC wallets can do this programmatically)
+3) retry with: `Authorization: L402 <macaroon>:<preimage>` → you receive an `api_key`
 
 ## 2) Call endpoints (spends verifications)
 
 ```bash
 API_KEY='bmd_...'
 
-curl -sS -H "X-Api-Key: $API_KEY" http://127.0.0.1:8000/v1/price/btcusd | jq
-curl -sS -H "X-Api-Key: $API_KEY" http://127.0.0.1:8000/v1/snapshot/btc | jq
+curl -sS -H "X-Api-Key: $API_KEY" https://oracle.satsgate.org/v1/price/btcusd | jq
+curl -sS -H "X-Api-Key: $API_KEY" https://oracle.satsgate.org/v1/snapshot/btc | jq
 ```
 
 ### Safe retries (recommended)
@@ -76,33 +42,27 @@ Include a unique `X-Request-Id` so retries don’t double-charge:
 curl -sS \
   -H "X-Api-Key: $API_KEY" \
   -H "X-Request-Id: my-agent-req-123" \
-  http://127.0.0.1:8000/v1/snapshot/btc | jq
+  https://oracle.satsgate.org/v1/snapshot/btc | jq
 ```
-
-## Notes
-
-- `/v1/snapshot/btc` costs **2 verifications**.
-- Everything else costs **1 verification**.
-- For low latency, the service fetches exchange data in the background and serves snapshots from cache.
 
 ## 3) Budget reasoning (agent-native)
 
 Forecast (when will I run out?):
 
 ```bash
-curl -sS -H "X-Api-Key: $API_KEY" http://127.0.0.1:8000/v1/usage/forecast | jq
+curl -sS -H "X-Api-Key: $API_KEY" https://oracle.satsgate.org/v1/usage/forecast | jq
 ```
 
 Recommendation (what to buy to cover the next N days?):
 
 ```bash
 curl -sS -H "X-Api-Key: $API_KEY" \
-  "http://127.0.0.1:8000/v1/recommendation/topup?target_days=3&buffer_hours=12" | jq
+  "https://oracle.satsgate.org/v1/recommendation/topup?target_days=3&buffer_hours=12" | jq
 ```
 
 Spend by endpoint (what am I spending on?):
 
 ```bash
 curl -sS -H "X-Api-Key: $API_KEY" \
-  "http://127.0.0.1:8000/v1/usage/by-endpoint?since_hours=24" | jq
+  "https://oracle.satsgate.org/v1/usage/by-endpoint?since_hours=24" | jq
 ```
