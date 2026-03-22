@@ -1,11 +1,12 @@
 {
-  "name": "btc-market-data-oracle-client",
+  "name": "btc-market-data-oracle-autopilot",
   "private": true,
   "type": "module",
   "scripts": {
-    "demo": "node oracle_demo_nwc.mjs",
-    "topup": "node oracle_demo_nwc.mjs --topup",
-    "snapshot": "node oracle_demo_nwc.mjs --snapshot"
+    "plug": "node oracle_autopilot.mjs",
+    "once": "node oracle_autopilot.mjs --once",
+    "snapshot": "node oracle_autopilot.mjs --once --no-reasoning",
+    "reasoning": "node oracle_autopilot.mjs --once --no-snapshot"
   },
   "dependencies": {
     "dotenv": "^17.3.1",

@@ -67,16 +67,17 @@ Top-ups use an L402-style flow:
    - dev-only (mock wallet): `GET /dev/mock/pay/{payment_hash}` returns the preimage
 3) retry with: `Authorization: L402 <macaroon>:<preimage>` → you receive an `api_key`
 
-### Fastest path (NWC): Node demo client
+### Fastest path (NWC): Oracle Autopilot (Plug & Play)
 
-If you have an NWC-capable wallet, you can run a working top-up + snapshot demo:
+If you have an NWC-capable wallet, you can run the Oracle Autopilot reference client.
+It provisions an API key automatically and can keep your balance topped up with guardrails.
 
 ```bash
 cd clients/node
 npm install
 cp .env.example .env
 # set NWC_URL
-npm run demo
+npm run plug
 ```
 
 ### Python demo client (query + reasoning)

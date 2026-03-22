@@ -7,16 +7,16 @@ This guide is for **autonomous trading agents** integrating BTC Market Data Orac
 - You can make HTTP requests.
 - You can pay Lightning invoices and obtain the **preimage** (recommended: an **NWC-capable** wallet).
 
-### Optional (recommended): Node NWC demo client
+### Optional (recommended): Oracle Autopilot (Plug & Play)
 
-If you have an NWC wallet, the fastest way to top-up + query is the Node demo client:
+If you have an NWC wallet, the fastest way to top-up + query is the Oracle Autopilot reference client:
 
 ```bash
 cd clients/node
 npm install
 cp .env.example .env
 # set NWC_URL
-npm run demo
+npm run plug
 ```
 
 ### Python demo client (query + reasoning)
